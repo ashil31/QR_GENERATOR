@@ -5,7 +5,7 @@ const QrCodeGenerator = (props) => {
   const generateQRCodes = async () => {
     setLoading(true);
     try {
-      const res = await axios.post("http://localhost:3000/api/generate-qr", {
+      const res = await axios.post("https://qr-generator-i9oy.onrender.com/api/generate-qr", {
         count,
       });
 
@@ -17,7 +17,7 @@ const QrCodeGenerator = (props) => {
 
       // 👉 Request the zip download
       const zipRes = await axios.post(
-        "http://localhost:3000/api/download-zip",
+        "https://qr-generator-i9oy.onrender.com/api/download-zip",
         { serialNumbers },
         { responseType: "blob" }
       );
@@ -74,12 +74,12 @@ const QrCodeGenerator = (props) => {
                 className="flex flex-col items-center bg-gray-50 rounded-lg shadow p-4"
               >
                 <a
-                  href={`http://localhost:3000/qrcodes/${serialNumber}.png`}
+                  href={`https://qr-generator-i9oy.onrender.com/qrcodes/${serialNumber}.png`}
                   download={`${serialNumber}.png`}
                   className="hover:opacity-80 transition"
                 >
                   <img
-                    src={`http://localhost:3000/qrcodes/${serialNumber}.png`}
+                    src={`https://qr-generator-i9oy.onrender.com/qrcodes/${serialNumber}.png`}
                     alt={serialNumber}
                     className="w-24 h-24 mb-2 border rounded"
                   />
