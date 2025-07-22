@@ -24,7 +24,7 @@ exports.generateQRCodes = async (req, res) => {
   for (let i = 0; i < count; i++) {
     const serialNumber = generateSerialNumber();
     const token = Math.random().toString(36).substring(2, 10);
-    const url = `https://www.ashilpatel.site/${token}`;
+    const url = `https://reward-project-1.onrender.com/redeem/${token}`;
 
     const qrPath = path.join(qrDir, `${serialNumber}.png`);
 
