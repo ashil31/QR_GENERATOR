@@ -29,7 +29,10 @@ exports.generateQRCodes = async (req, res) => {
     const qrPath = path.join(qrDir, `${serialNumber}.png`);
 
     // Save QR code to file
-    await QRCode.toFile(qrPath, url);
+    await QRCode.toFile(qrPath, url, {
+      width: 1000,
+      margin: 1,
+    });
 
     // Read QR image and convert to base64
     const qrImageBuffer = fs.readFileSync(qrPath);
