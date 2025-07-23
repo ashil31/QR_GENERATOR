@@ -19,7 +19,7 @@ exports.generateQRCodesPDF = async (req, res) => {
   for (let i = 0; i < count; i++) {
     const now = new Date();
     const ymd = now.toISOString().slice(0, 10).replace(/-/g, "");
-    const rand = Math.floor(10000 + Math.random() * 90000);
+    const rand = Math.floor(100 + Math.random() * 900);
     const serialNumber = `SN${ymd}-${rand}`;
     const token = Math.random().toString(36).substring(2, 10);
     const url = `https://reward-project-1.onrender.com/redeem/${token}`;
