@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const QrCode = require("../models/qrCode.model");
 
-const cmToPt = (cm) => cm * 28.3465; // 1 cm ≈ 28.35 pt
+const cmToPt = (cm) => cm * 28.3465;
 
 exports.generateQRCodesPDF = async (req, res) => {
   const { count } = req.body;
@@ -25,27 +25,26 @@ exports.generateQRCodesPDF = async (req, res) => {
     const url = `https://reward-project-1.onrender.com/redeem/${token}`;
     const qrPath = path.join(qrDir, `${serialNumber}.png`);
 
-    await QRCode.toFile(qrPath, url, { width: 300, margin: 1 });
+    await QRCode.toFile(qrPath, url, { width: 250, margin: 1 });
     await QrCode.create({ serialNumber, token });
     qrCodes.push({ serialNumber, filePath: qrPath });
   }
 
-  // PDF Canvas: 10cm x 7.5cm
-  const pageWidth = cmToPt(10);      // ~283 pt
-  const pageHeight = cmToPt(7.5);    // ~213 pt
-  const qrWidth = cmToPt(4);         // ~113 pt
-  const qrHeight = cmToPt(3);        // ~85 pt
-
-  const pdfPath = path.join(qrDir, `qr-batch-${Date.now()}.pdf`);
-  const doc = new PDFDocument({ size: [pageWidth, pageHeight], margin: 10 });
-  doc.pipe(fs.createWriteStream(pdfPath));
-
+  // Page and QR dimensions
+  const pageWidth = cmToPt(10);         // ~283 pt
+  const pageHeight = cmToPt(7.5);       // ~212 pt
+  const qrSize = cmToPt(3.2);           // 3.2 cm square
+  const textHeight = 10;
+  const itemsPerPage = 4;
   const cols = 2;
   const rows = 2;
-  const itemsPerPage = cols * rows;
 
-  const spacingX = (pageWidth - cols * qrWidth) / (cols + 1);
-  const spacingY = (pageHeight - rows * (qrHeight + 15)) / (rows + 1); // 15pt for serial number text
+  const spacingX = (pageWidth - (cols * qrSize)) / (cols + 1);
+  const spacingY = (pageHeight - (rows * (qrSize + textHeight))) / (rows + 1);
+
+  const pdfPath = path.join(qrDir, `qr-batch-${Date.now()}.pdf`);
+  const doc = new PDFDocument({ size: [pageWidth, pageHeight], margin: 0 });
+  doc.pipe(fs.createWriteStream(pdfPath));
 
   for (let i = 0; i < qrCodes.length; i++) {
     const qr = qrCodes[i];
@@ -53,30 +52,31 @@ exports.generateQRCodesPDF = async (req, res) => {
     const col = pos % cols;
     const row = Math.floor(pos / cols);
 
-    const x = spacingX + col * (qrWidth + spacingX);
-    const y = spacingY + row * (qrHeight + spacingY + 15);
+    const x = spacingX + col * (qrSize + spacingX);
+    const y = spacingY + row * (qrSize + textHeight + spacingY);
 
-    doc.image(qr.filePath, x, y, { width: qrWidth, height: qrHeight });
+    // 🟦 Square QR Code
+    doc.image(qr.filePath, x, y, { width: qrSize, height: qrSize });
 
-    // Draw Serial Number (below QR code)
+    // 🏷️ Serial number
     doc
       .fillColor("black")
-      .fontSize(8)
-      .text(qr.serialNumber, x, y + qrHeight + 2, {
-        width: qrWidth,
+      .fontSize(7.5)
+      .text(qr.serialNumber, x, y + qrSize + 2, {
+        width: qrSize,
         align: "center",
       });
 
-    // Add a new page after every 4 QR codes (except last)
+    // ➕ Add new page if needed
     if (pos === itemsPerPage - 1 && i !== qrCodes.length - 1) {
-      doc.addPage({ size: [pageWidth, pageHeight], margin: 10 });
+      doc.addPage({ size: [pageWidth, pageHeight], margin: 0 });
     }
   }
 
   doc.end();
 
   res.json({
-    message: "PDF with QR codes generated",
+    message: "PDF with square QR codes generated",
     downloadUrl: `https://qr-generator-i9oy.onrender.com/qrcodes/${path.basename(pdfPath)}`,
   });
 };
