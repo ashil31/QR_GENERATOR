@@ -74,7 +74,7 @@ exports.generateQRCodesPDF = async (req, res) => {
 
   res.json({
     message: "PDF with QR codes generated",
-    downloadUrl: `https://www.ashilpatel.site/qrcodes/${path.basename(pdfPath)}`,
+    downloadUrl: `https://qr-generator-i9oy.onrender.com/qrcodes/${path.basename(pdfPath)}`,
   });
 };
 
