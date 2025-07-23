@@ -11,3 +11,5 @@ const { generateQRCodesPDF } = require("../controllers/qr.controller");
 
 router.post("/generate-qr-pdf", generateQRCodesPDF); // <-- ✅ NEW API route
 
+module.exports = router;
+
