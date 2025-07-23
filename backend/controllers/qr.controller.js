@@ -11,7 +11,7 @@ const generateSerialNumber = () => {
   return `SN${ymd}-${rand}`;
 };
 
-exports.generateQRCodes = async (req, res) => {
+exports.generateQRCodesPDF = async (req, res) => {
   const { count } = req.body;
 
   if (!count || count < 1 || count > 100)
@@ -21,7 +21,6 @@ exports.generateQRCodes = async (req, res) => {
   const qrDir = path.join(__dirname, "../public/qrcodes");
   if (!fs.existsSync(qrDir)) fs.mkdirSync(qrDir, { recursive: true });
 
-  // 1. Generate QR codes
   for (let i = 0; i < count; i++) {
     const serialNumber = generateSerialNumber();
     const token = Math.random().toString(36).substring(2, 10);
@@ -33,25 +32,16 @@ exports.generateQRCodes = async (req, res) => {
       margin: 1,
     });
 
-    const qrImageBuffer = fs.readFileSync(qrPath);
-    const qrBase64 = qrImageBuffer.toString("base64");
-
-    await QrCode.create({
-      serialNumber,
-      token,
-      qrImage: qrBase64,
-    });
-
+    await QrCode.create({ serialNumber, token });
     qrCodes.push({ serialNumber, filePath: qrPath });
   }
 
-  // 2. Create PDF (A5) with QR code grid
-  const pdfPath = path.join(qrDir, `qr-codes-${Date.now()}.pdf`);
+  const pdfPath = path.join(qrDir, `qr-batch-${Date.now()}.pdf`);
   const doc = new PDFDocument({ size: "A5", margin: 20 });
   doc.pipe(fs.createWriteStream(pdfPath));
 
   const cols = 4;
-  const rows = Math.ceil(count / cols);
+  const rows = 4;
   const qrSize = 100;
   const spacingX = (doc.page.width - cols * qrSize) / (cols + 1);
   const spacingY = (doc.page.height - rows * qrSize) / (rows + 1);
@@ -63,17 +53,13 @@ exports.generateQRCodes = async (req, res) => {
     const x = spacingX + col * (qrSize + spacingX);
     const y = spacingY + row * (qrSize + spacingY);
 
-    // Draw QR code image
     doc.image(qr.filePath, x, y, { width: qrSize });
-
-    // Draw background rectangle for text
     doc
       .fillColor("black")
       .opacity(0.5)
       .rect(x, y + qrSize / 2 - 7, qrSize, 14)
       .fill();
 
-    // Draw white serial number text inside QR
     doc
       .fillColor("white")
       .fontSize(8)
@@ -87,7 +73,8 @@ exports.generateQRCodes = async (req, res) => {
   doc.end();
 
   res.json({
-    message: "QR codes generated and single A5 PDF created",
+    message: "PDF with QR codes generated",
     downloadUrl: `https://www.ashilpatel.site/qrcodes/${path.basename(pdfPath)}`,
   });
 };
+
