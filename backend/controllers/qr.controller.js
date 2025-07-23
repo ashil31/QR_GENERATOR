@@ -21,7 +21,7 @@ exports.generateQRCodes = async (req, res) => {
   const qrDir = path.join(__dirname, "../public/qrcodes");
   if (!fs.existsSync(qrDir)) fs.mkdirSync(qrDir, { recursive: true });
 
-  // 1. Generate QR Codes and store info
+  // 1. Generate QR codes
   for (let i = 0; i < count; i++) {
     const serialNumber = generateSerialNumber();
     const token = Math.random().toString(36).substring(2, 10);
@@ -45,7 +45,7 @@ exports.generateQRCodes = async (req, res) => {
     qrCodes.push({ serialNumber, filePath: qrPath });
   }
 
-  // 2. Create PDF with all QR codes in grid
+  // 2. Create PDF (A5) with QR code grid
   const pdfPath = path.join(qrDir, `qr-codes-${Date.now()}.pdf`);
   const doc = new PDFDocument({ size: "A5", margin: 20 });
   doc.pipe(fs.createWriteStream(pdfPath));
@@ -54,27 +54,40 @@ exports.generateQRCodes = async (req, res) => {
   const rows = Math.ceil(count / cols);
   const qrSize = 100;
   const spacingX = (doc.page.width - cols * qrSize) / (cols + 1);
-  const spacingY = (doc.page.height - rows * (qrSize + 20)) / (rows + 1); // 20 for label
+  const spacingY = (doc.page.height - rows * qrSize) / (rows + 1);
 
   qrCodes.forEach((qr, index) => {
     const col = index % cols;
     const row = Math.floor(index / cols);
 
     const x = spacingX + col * (qrSize + spacingX);
-    const y = spacingY + row * (qrSize + spacingY + 20);
+    const y = spacingY + row * (qrSize + spacingY);
 
+    // Draw QR code image
     doc.image(qr.filePath, x, y, { width: qrSize });
 
-    doc.fontSize(8).text(qr.serialNumber, x, y + qrSize + 2, {
-      width: qrSize,
-      align: "center",
-    });
+    // Draw background rectangle for text
+    doc
+      .fillColor("black")
+      .opacity(0.5)
+      .rect(x, y + qrSize / 2 - 7, qrSize, 14)
+      .fill();
+
+    // Draw white serial number text inside QR
+    doc
+      .fillColor("white")
+      .fontSize(8)
+      .opacity(1)
+      .text(qr.serialNumber, x, y + qrSize / 2 - 5, {
+        width: qrSize,
+        align: "center",
+      });
   });
 
   doc.end();
 
   res.json({
-    message: "QR codes generated and PDF created",
+    message: "QR codes generated and single A5 PDF created",
     downloadUrl: `https://www.ashilpatel.site/qrcodes/${path.basename(pdfPath)}`,
   });
 };
