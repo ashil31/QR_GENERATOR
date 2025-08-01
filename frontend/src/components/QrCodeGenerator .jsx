@@ -1,5 +1,9 @@
 import axios from "axios";
 import { useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faQrcode } from "@fortawesome/free-solid-svg-icons";
+import { faFileExport } from "@fortawesome/free-solid-svg-icons";
+import toast from "react-hot-toast";
 
 const QrCodeGenerator = ({ count, setCount, loading, setLoading }) => {
   const [pdfUrl, setPdfUrl] = useState(null);
@@ -16,27 +20,37 @@ const QrCodeGenerator = ({ count, setCount, loading, setLoading }) => {
 
       const { downloadUrl } = res.data;
 
-      // Trigger the PDF download
-      const link = document.createElement("a");
-      link.href = downloadUrl;
-      link.setAttribute("download", "qrcodes.pdf");
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      const fileResponse = await axios.get(downloadUrl, {
+        responseType: "blob",
+      });
 
+      const blob = new Blob([fileResponse.data], { type: "application/pdf" });
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = "qrcodes.pdf";
+      link.click();
+
+      // Clean up
+      window.URL.revokeObjectURL(blobUrl);
       setPdfUrl(downloadUrl);
     } catch (err) {
-      console.error(err);
-      alert("❌ Failed to generate QR PDF");
+      console.log("ERROR RESPONSE:", err.response);
+
+      const message =
+        err?.response?.data?.error  ||
+        "Something went wrong. Please check the input.";
+      toast.error(message);
     }
 
     setLoading(false);
   };
 
   return (
-    <div className="max-w-xl mx-auto mt-12 px-6 py-8 bg-white shadow-xl rounded-xl">
+    <div className="max-w-xl mx-auto mt-12 px-6 py-8 bg-white hover:shadow-xl hover:-translate-y-2 rounded-xl">
       <h1 className="text-3xl font-bold text-blue-700 text-center mb-6">
-        🧾 QR Code PDF Generator
+        <FontAwesomeIcon icon={faQrcode} /> QR Code PDF Generator
       </h1>
 
       <label className="block text-gray-700 text-sm font-semibold mb-2">
@@ -55,7 +69,9 @@ const QrCodeGenerator = ({ count, setCount, loading, setLoading }) => {
         onClick={generateQRCodes}
         disabled={loading}
         className={`w-full py-3 rounded-lg font-semibold text-white transition ${
-          loading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+          loading
+            ? "bg-blue-400 cursor-not-allowed"
+            : "bg-blue-600 hover:bg-blue-700"
         }`}
       >
         {loading ? "🔄 Generating PDF..." : "📄 Generate & Download PDF"}
@@ -63,7 +79,8 @@ const QrCodeGenerator = ({ count, setCount, loading, setLoading }) => {
 
       {pdfUrl && (
         <p className="text-center text-green-600 mt-4">
-          ✅ PDF Generated! Check your downloads.
+          <FontAwesomeIcon icon={faFileExport} className="text-green mr-2" />{" "}
+          PDF Generated! Check your downloads.
         </p>
       )}
     </div>
@@ -71,5 +88,3 @@ const QrCodeGenerator = ({ count, setCount, loading, setLoading }) => {
 };
 
 export default QrCodeGenerator;
-
-

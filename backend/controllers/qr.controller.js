@@ -9,8 +9,8 @@ const cmToPt = (cm) => cm * 28.3465;
 exports.generateQRCodesPDF = async (req, res) => {
   const { count } = req.body;
 
-  if (!count || count < 1 || count > 100)
-    return res.status(400).json({ error: "Invalid count" });
+  if (!count || count < 1 || count > 200)
+    return res.status(400).json({ message: "Invalid count and Apply 1 to under 200." });
 
   const qrCodes = [];
   const qrDir = path.join(__dirname, "../public/qrcodes");
